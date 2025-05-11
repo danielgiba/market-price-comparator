@@ -36,4 +36,31 @@ public class DiscountAnalyzer {
 
         return discounts;
     }
+
+    public List<Discount> findNewDiscounts(List<Product> oldProducts, List<Product> newProducts) {
+        Map<String, Double> oldPrices = new HashMap<>();
+        for (Product p : oldProducts) {
+            String key = p.getProductId() + "_" + p.getStore();
+            oldPrices.put(key, p.getPrice());
+        }
+
+        List<Discount> newDiscounts = new ArrayList<>();
+        for (Product p : newProducts) {
+            String key = p.getProductId() + "_" + p.getStore();
+            if (oldPrices.containsKey(key)) {
+                double oldPrice = oldPrices.get(key);
+                if (p.getPrice() < oldPrice) {
+                    newDiscounts.add(new Discount(
+                            p.getProductId(),
+                            p.getProductName(),
+                            oldPrice,
+                            p.getPrice(),
+                            p.getStore()
+                    ));
+                }
+            }
+        }
+
+        return newDiscounts;
+    }
 }

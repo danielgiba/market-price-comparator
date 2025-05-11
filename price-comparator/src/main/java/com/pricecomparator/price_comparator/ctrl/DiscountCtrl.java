@@ -31,14 +31,12 @@ public class DiscountCtrl {
 
         List<Discount> discounts = analyzer.findDiscounts(oldProducts, newProducts);
 
-        // Filtrare
         if (minPercent != null) {
             discounts = discounts.stream()
                     .filter(d -> d.getDiscountPercent() >= minPercent)
                     .collect(Collectors.toList());
         }
 
-        // Sortare
         if (sortBy != null) {
             switch (sortBy) {
                 case "percent" -> discounts.sort(Comparator.comparingDouble(Discount::getDiscountPercent).reversed());
@@ -48,5 +46,15 @@ public class DiscountCtrl {
         }
 
         return discounts;
+    }
+
+    @GetMapping("/discounts/new")
+    public List<Discount> getNewDiscounts(
+            @RequestParam String oldFile,
+            @RequestParam String newFile
+    ) {
+        List<Product> oldProducts = loader.loadProducts(oldFile);
+        List<Product> newProducts = loader.loadProducts(newFile);
+        return analyzer.findNewDiscounts(oldProducts, newProducts);
     }
 }
