@@ -1,142 +1,209 @@
-# Price Comparator Backend
+# Market Price Comparator – Java Spring Boot
 
-Acest proiect reprezintă o aplicație Java Spring Boot care permite compararea prețurilor produselor alimentare între mai multe supermarketuri (ex: Lidl, Kaufland, Profi). Scopul este de a evidenția reducerile de preț și de a sprijini utilizatorii în luarea unor decizii de cumpărare informate.
+This project is a backend web application developed in Java using Spring Boot. Its purpose is to compare product prices between different supermarket chains (such as Lidl, Kaufland, and Profi), identify discounts, track price changes over time, and provide tools to optimize a shopping basket or trigger alerts when certain price thresholds are reached.
 
----
-
-## Structura proiectului
-
-- `model/`
-  - `Product.java`: Reprezintă structura unui produs (nume, brand, cantitate, preț, magazin, etc).
-  - `Discount.java`: Reprezintă o reducere identificată între două fișiere CSV pentru același produs (conține prețul vechi, cel nou și procentul de reducere).
-
-- `util/`
-  - `ProductDataLoader.java`: Citește și parsează fișiere CSV în obiecte de tip `Product`.
-  - `DiscountAnalyzer.java`: Compară două liste de produse și generează o listă de reduceri.
-
-- `ctrl/`
-  - `ProductCtrl.java`: Controller REST care expune endpointul `/products` pentru a încărca produsele dintr-un fișier CSV.
-  - `DiscountCtrl.java`: Controller REST care expune endpointul `/discounts` pentru a compara două fișiere CSV și a returna reducerile.
-
-- `PriceComparatorApplication.java`: Clasa principală care pornește aplicația Spring Boot.
+The project was created as part of the Accesa Java Internship 2025 challenge, where participants were asked to implement useful features based on real-world price tracking needs.
 
 ---
 
-## Cerințe
+## Project Structure
 
-- JDK 17
-- Maven 3.8+
+The application is organized using a clean, layered architecture that separates business logic, data models, utility classes, and REST controllers. Here's a breakdown of the main packages:
+
+### `model/`
+
+Contains core domain classes.
+
+- `Product.java`  
+  Represents a single product in a supermarket. Each product has attributes such as ID, name, brand, category, quantity, unit, price, store, and date (derived from the CSV file it came from).
+
+- `Discount.java`  
+  Represents a discount found between two CSV files, including the product’s old and new prices, the store, and the calculated discount percentage.
+
+### `dto/`
+
+Contains Data Transfer Objects that help shape specific API responses without exposing the internal structure of models.
+
+- `PricePoint.java`: used for returning a product's price on a specific date in the price history endpoint.
+- `OptimizedProduct.java`: a simplified product representation used in shopping basket optimization results.
+- `BasketOptResult.java`: represents the full result of basket optimization (store name, total price, and product list).
+- `PriceAlert.java`: represents whether a product has reached a price below a specified threshold and what the current price is.
+
+### `util/`
+
+Contains helper classes for reading data and performing price comparisons.
+
+- `ProductDataLoader.java`: loads product data from CSV files stored in `resources/data/` and attaches store and date metadata based on the filename.
+- `DiscountAnalyzer.java`: contains logic for computing price reductions between product datasets, as well as detecting newly introduced discounts.
+
+### `ctrl/`
+
+Exposes the API endpoints via Spring REST controllers.
+
+- `ProductCtrl.java`: handles `/products`, allowing users to load and filter products by file, brand, category, store, and sort them.
+- `DiscountCtrl.java`: provides both `/discounts` and `/discounts/new`, allowing full discount comparison or just new discounts compared to the previous file.
+- `PriceHistoryCtrl.java`: exposes `/price-history`, allowing users to view how a product's price changed over time across multiple files.
+- `BasketCtrl.java`: implements `/basket/optimize`, returning the cheapest store for a set of products.
+- `AlertCtrl.java`: provides `/alert/check`, which verifies if a product has reached a user-defined price alert threshold.
+
+---
+
+## Requirements
+
+- Java 17
+- Maven 3.8 or newer
 - Spring Boot 3.4.5
 - OpenCSV 5.8
 
----
-
-## Cum se rulează aplicația
-
-1. Clonare repository:
-   ```bash
-   git clone https://github.com/danielgiba/market-price-comparator.git
-   cd market-price-comparator
-   ```
-
-2. Rulare aplicație:
-   ```bash
-   mvn spring-boot:run
-   ```
-
-3. Serverul pornește implicit pe:  
-   `http://localhost:8080`
+This project does not use a database; all processing happens in-memory.
 
 ---
 
-## Structura fișierelor CSV
+## Running the Application
 
-### Exemple:
-Fișierele CSV se află în `src/main/resources/data/` și au următorul format:
+1. Clone the repository:
 
-#### Produse:
+```bash
+git clone https://github.com/danielgiba/market-price-comparator.git
+cd market-price-comparator
+```
+
+2. Run the application using Maven:
+
+```bash
+mvn spring-boot:run
+```
+
+3. The app will be available at:
+
+```
+http://localhost:8080
+```
+
+Sample CSV files can be found under:
+
+```
+src/main/resources/data/
+```
+
+---
+
+## CSV File Format
+
+Each CSV represents product data from one store at a specific date. Filenames must follow the format:
+
+```
+[store]_[yyyy-MM-dd].csv
+```
+
+Example line from `lidl_2025-05-08.csv`:
+
 ```
 product_id;product_name;product_category;brand;package_quantity;package_unit;price;currency
 P001;lapte zuzu;lactate;Zuzu;1;l;9.80;RON
-...
 ```
 
 ---
 
-## Funcționalități implementate
+## Implemented Features
 
-### 1. Listarea produselor dintr-un fișier CSV
+### 1. List Products
 
-**Endpoint:**
+Returns all products from a given CSV file.
+
 ```
-GET /products?file=nume_fisier.csv
+GET /products?file=lidl_2025-05-08.csv
 ```
 
-**Exemplu:**
+Supports optional filters:
+- `brand`
+- `category`
+- `store`
+- `sortBy=name|price|brand`
+
+---
+
+### 2. Compare Discounts Between Two Files
+
+Returns products with price drops.
+
 ```
-http://localhost:8080/products?file=lidl_2025-05-08.csv
+GET /discounts?oldFile=lidl_2025-05-01.csv&newFile=lidl_2025-05-08.csv
+```
+
+Optional:
+- `minPercent`
+- `sortBy=percent|price|name`
+
+---
+
+### 3. Show Only New Discounts
+
+Returns only newly introduced discounts not present in the old file.
+
+```
+GET /discounts/new?oldFile=profi_2025-05-01.csv&newFile=profi_2025-05-08.csv
 ```
 
 ---
 
-### 2. Afișarea reducerilor de preț între două fișiere
+### 4. Get Price History for a Product
 
-**Endpoint:**
-```
-GET /discounts?oldFile=vechi.csv&newFile=nou.csv
-```
+Returns all known prices for a given product across multiple dates.
 
-**Parametri opționali:**
-- `minPercent` – filtrează reducerile mai mari decât un anumit procent.
-- `sortBy` – ordonează rezultatele după `percent`, `price` sau `name`.
-
-**Exemplu:**
 ```
-http://localhost:8080/discounts?oldFile=lidl_2025-05-01.csv&newFile=lidl_2025-05-08.csv&minPercent=10&sortBy=percent
+GET /price-history?productId=P001&files=lidl_2025-05-01.csv,lidl_2025-05-08.csv
 ```
 
 ---
 
-## Decizii de design și presupuneri
+### 5. Optimize Shopping Basket
 
-- Fișierele CSV sunt localizate în folderul `resources/data/`.
-- Fiecare combinație produs + magazin este unică.
-- Se presupune că fișierele CSV sunt corect formatate.
-- Nu a fost folosită o bază de date. Totul se lucrează în memorie.
-- Nu se gestionează reducerile expirate, ci doar comparația între două fișiere.
+Returns the store with the lowest total price for a set of products.
 
----
-
-## Extensibilitate
-
-Proiectul poate fi extins cu următoarele:
-- Salvarea istoricului prețurilor într-o bază de date.
-- Exportul reducerilor în fișiere.
-- Recomandări pe baza valorii per unitate (kg, l, etc).
-- Notificări automate când apar reduceri noi.
+```
+GET /basket/optimize?products=P001,P005,P017&files=lidl_2025-05-08.csv,profi_2025-05-08.csv
+```
 
 ---
 
-## Cum pot fi testate endpointurile
+### 6. Trigger a Custom Price Alert
 
-Folosind un browser sau Postman:
+Checks whether a product’s current price is lower than or equal to a given threshold.
 
-- **Listare produse:**
-  ```
-  http://localhost:8080/products?file=kaufland_2025-05-08.csv
-  ```
-
-- **Comparare reduceri între două fișiere:**
-  ```
-  http://localhost:8080/discounts?oldFile=kaufland_2025-05-01.csv&newFile=kaufland_2025-05-08.csv
-  ```
-
-- **Filtrare după reducere:**
-  ```
-  http://localhost:8080/discounts?oldFile=lidl_2025-05-01.csv&newFile=lidl_2025-05-08.csv&minPercent=15
-  ```
+```
+GET /alert/check?productId=P001&target=9.50&file=lidl_2025-05-08.csv
+```
 
 ---
 
+## Sample Test URLs
 
+```
+http://localhost:8080/products?file=profi_2025-05-08.csv
+http://localhost:8080/discounts?oldFile=profi_2025-05-01.csv&newFile=profi_2025-05-08.csv
+http://localhost:8080/discounts/new?oldFile=kaufland_2025-05-01.csv&newFile=kaufland_2025-05-08.csv
+http://localhost:8080/price-history?productId=P001&files=lidl_2025-05-01.csv,lidl_2025-05-08.csv
+http://localhost:8080/basket/optimize?products=P001,P005,P017&files=lidl_2025-05-08.csv,kaufland_2025-05-08.csv
+http://localhost:8080/alert/check?productId=P001&target=9.80&file=profi_2025-05-08.csv
+```
+
+---
+
+## Assumptions & Design Notes
+
+- Files are trusted to be correctly formatted.
+- Each product is identified by a unique `product_id + store` combination.
+- All computations are done in-memory for simplicity and speed.
+- The app is stateless and file-driven by design.
+
+---
+
+## Possible Extensions
+
+- Add a database to persist price history.
+- Allow scheduled tracking of files and background alerts.
+- Build a frontend dashboard with charts.
+- Add user authentication and user-specific alert storage.
+- Support for unit price comparisons and substitutions.
 
