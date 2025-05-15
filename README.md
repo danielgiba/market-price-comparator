@@ -170,10 +170,5 @@ Checks whether a product’s current price is lower than or equal to a given thr
 http://localhost:8080/alert/check?productId=P001&target=9.80&file=lidl_2025-05-08.csv
 ```
 
----
-
-
----
-
 
 
