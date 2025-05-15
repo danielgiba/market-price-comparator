@@ -112,7 +112,8 @@ P001;lapte zuzu;lactate;Zuzu;1;l;9.80;RON
 Returns all products from a given CSV file.
 
 ```
-GET /products?file=lidl_2025-05-08.csv
+http://localhost:8080/products?file=lidl_2025-05-08.csv
+
 ```
 
 Supports optional filters:
@@ -128,21 +129,15 @@ Supports optional filters:
 Returns products with price drops.
 
 ```
-GET /discounts?oldFile=lidl_2025-05-01.csv&newFile=lidl_2025-05-08.csv
+http://localhost:8080/discounts?oldFile=lidl_2025-05-01.csv&newFile=lidl_2025-05-08.csv
 ```
 
-Optional:
-- `minPercent`
-- `sortBy=percent|price|name`
-
----
-
-### 3. Show Only New Discounts
+### 3. Show Discounts as "%"
 
 Returns only newly introduced discounts not present in the old file.
 
 ```
-GET /discounts/new?oldFile=profi_2025-05-01.csv&newFile=profi_2025-05-08.csv
+http://localhost:8080/discounts/new?oldFile=lidl_2025-05-01.csv&newFile=lidl_2025-05-08.csv
 ```
 
 ---
@@ -152,7 +147,7 @@ GET /discounts/new?oldFile=profi_2025-05-01.csv&newFile=profi_2025-05-08.csv
 Returns all known prices for a given product across multiple dates.
 
 ```
-GET /price-history?productId=P001&files=lidl_2025-05-01.csv,lidl_2025-05-08.csv
+http://localhost:8080/price-history?productId=P001&files=lidl_2025-05-01.csv,lidl_2025-05-08.csv
 ```
 
 ---
@@ -162,7 +157,7 @@ GET /price-history?productId=P001&files=lidl_2025-05-01.csv,lidl_2025-05-08.csv
 Returns the store with the lowest total price for a set of products.
 
 ```
-GET /basket/optimize?products=P001,P005,P017&files=lidl_2025-05-08.csv,profi_2025-05-08.csv
+http://localhost:8080/basket/optimize?products=P001,P005,P017&files=lidl_2025-05-08.csv,profi_2025-05-08.csv,kaufland_2025-05-08.csv
 ```
 
 ---
@@ -172,38 +167,13 @@ GET /basket/optimize?products=P001,P005,P017&files=lidl_2025-05-08.csv,profi_202
 Checks whether a product’s current price is lower than or equal to a given threshold.
 
 ```
-GET /alert/check?productId=P001&target=9.50&file=lidl_2025-05-08.csv
+http://localhost:8080/alert/check?productId=P001&target=9.80&file=lidl_2025-05-08.csv
 ```
 
 ---
 
-## Sample Test URLs
-
-```
-http://localhost:8080/products?file=profi_2025-05-08.csv
-http://localhost:8080/discounts?oldFile=profi_2025-05-01.csv&newFile=profi_2025-05-08.csv
-http://localhost:8080/discounts/new?oldFile=kaufland_2025-05-01.csv&newFile=kaufland_2025-05-08.csv
-http://localhost:8080/price-history?productId=P001&files=lidl_2025-05-01.csv,lidl_2025-05-08.csv
-http://localhost:8080/basket/optimize?products=P001,P005,P017&files=lidl_2025-05-08.csv,kaufland_2025-05-08.csv
-http://localhost:8080/alert/check?productId=P001&target=9.80&file=profi_2025-05-08.csv
-```
 
 ---
 
-## Assumptions & Design Notes
 
-- Files are trusted to be correctly formatted.
-- Each product is identified by a unique `product_id + store` combination.
-- All computations are done in-memory for simplicity and speed.
-- The app is stateless and file-driven by design.
-
----
-
-## Possible Extensions
-
-- Add a database to persist price history.
-- Allow scheduled tracking of files and background alerts.
-- Build a frontend dashboard with charts.
-- Add user authentication and user-specific alert storage.
-- Support for unit price comparisons and substitutions.
 
